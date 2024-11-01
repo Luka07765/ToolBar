@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 
 const Toolbar = () => {
   const editorRef = useRef(null);
-
+  //ja sam strava
   const addIcon = (icon) => {
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
