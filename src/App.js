@@ -1,65 +1,82 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
+import { Editor, EditorState, RichUtils, ContentState } from 'draft-js';
+import 'draft-js/dist/Draft.css';
 
-const Toolbar = () => {
-  const editorRef = useRef(null);
-  //ja sam strava
-  const addIcon = (icon) => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const iconNode = document.createTextNode(icon);
-      range.insertNode(iconNode);
-    }
+import ContextMenu from './right/ContextMenu';
+const colorStyleMap = {
+  RED: { color: '#ff0000' },
+  GREEN: { color: '#00ff00' },
+};
+
+const highlightStyleMap = {
+  YELLOW: { backgroundColor: '#00ff00' },
+};
+
+const App = () => {
+  const initialContent = ContentState.createFromText(
+    'This is a sample text. You can edit and format it.'
+  );
+  const [editorState, setEditorState] = useState(
+    EditorState.createWithContent(initialContent)
+  );
+
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({
+    x: 0,
+    y: 0,
+  });
+
+  const handleEditorChange = (state) => {
+    setEditorState(state);
   };
 
-  const addLine = () => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
+  const toggleBold = () => {
+    setEditorState(RichUtils.toggleInlineStyle(editorState, 'BOLD'));
+    setShowContextMenu(false);
+  };
 
-      // Create the line element (hr)
-      const lineNode = document.createElement('hr');
-      lineNode.style.borderTop = '1px dotted #888';
-      lineNode.style.width = '80%';
-      lineNode.style.margin = '20px auto';
-      lineNode.style.boxShadow = '0 0 8px rgba(255, 255, 255, 0.8)';
+  const toggleHighlight = () => {
+    setEditorState(RichUtils.toggleInlineStyle(editorState, 'YELLOW')); // Use the default highlight color
+    setShowContextMenu(false);
+  };
 
-      // Insert the line node at the current caret position
-      range.insertNode(lineNode);
-
-      // Move the caret after the inserted node (optional, but user-friendly)
-      range.setStartAfter(lineNode);
-      range.setEndAfter(lineNode);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
+  const handleRightClick = (event) => {
+    event.preventDefault(); // Prevent the default context menu
+    setContextMenuPosition({ x: event.pageX, y: event.pageY });
+    setShowContextMenu(true);
   };
 
   return (
     <div>
-      {/* Toolbar Buttons */}
-      <div className="toolbar">
-        <button onClick={() => addIcon('😄')}>IKONA</button>
-        <button onClick={addLine}>Add Line</button>
-      </div>
+      <h2>Custom Text Editor with Context Menu</h2>
 
-      {/* Editable Area */}
+      {/* Editor with initial text */}
       <div
-        ref={editorRef}
-        className="editor"
-        contentEditable="true"
-        suppressContentEditableWarning={true}
         style={{
           border: '1px solid #ccc',
           padding: '10px',
           minHeight: '200px',
-          marginTop: '10px',
         }}
+        onContextMenu={handleRightClick} // Handle right-click
       >
-        <p>Type something here...</p>
+        <Editor
+          editorState={editorState}
+          onChange={handleEditorChange}
+          customStyleMap={{ ...colorStyleMap, ...highlightStyleMap }}
+        />
       </div>
+
+      {/* Context Menu */}
+      {showContextMenu && (
+        <ContextMenu
+          position={contextMenuPosition}
+          onBold={toggleBold}
+          onHighlight={toggleHighlight}
+          onClose={() => setShowContextMenu(false)}
+        />
+      )}
     </div>
   );
 };
 
-export default Toolbar;
+export default App;
